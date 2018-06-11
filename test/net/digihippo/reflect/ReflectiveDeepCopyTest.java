@@ -3,11 +3,12 @@ package net.digihippo.reflect;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ReflectiveDeepCopyTest
 {
@@ -18,6 +19,12 @@ public class ReflectiveDeepCopyTest
         private ExampleOne(long firstFieldValue)
         {
             firstField = firstFieldValue;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "ExampleOne(" + firstField + ")";
         }
     }
 
@@ -171,6 +178,61 @@ public class ReflectiveDeepCopyTest
         );
     }
 
+    @Test
+    public void map_values_of_the_same_instance_means_deep_copy_failure()
+    {
+        final Map<String, ExampleOne> one = new HashMap<>();
+        final Map<String, ExampleOne> two = new HashMap<>();
+
+        final ExampleOne value = new ExampleOne(24232L);
+        one.put("one", value);
+        two.put("one", value);
+
+        assertDeepCopyFailure(
+            one, two, "root->get(one): The same instance cannot be a deep copy of itself");
+    }
+
+    @Test
+    public void map_values_that_are_deep_copies_means_deep_copy_success()
+    {
+        final Map<String, ExampleOne> one = new HashMap<>();
+        final Map<String, ExampleOne> two = new HashMap<>();
+
+        one.put("one", new ExampleOne(24232L));
+        two.put("one", new ExampleOne(24232L));
+
+        assertDeepCopySuccess(one, two);
+    }
+
+    @Test
+    public void map_values_that_are_non_equal_are_deep_copy_failures()
+    {
+        final Map<String, ExampleOne> one = new HashMap<>();
+        final Map<String, ExampleOne> two = new HashMap<>();
+
+        one.put("one", new ExampleOne(24232L));
+        two.put("two", new ExampleOne(24232L));
+
+        assertDeepCopyFailure(
+            one, two,
+            "root->get(one): ExampleOne(24232) != null");
+    }
+
+    @Test
+    public void map_values_that_have_extra_entries_are_deep_copy_failures()
+    {
+        final Map<String, ExampleOne> one = new HashMap<>();
+        final Map<String, ExampleOne> two = new HashMap<>();
+
+        one.put("one", new ExampleOne(24232L));
+        two.put("one", new ExampleOne(24232L));
+        two.put("two", new ExampleOne(24232L));
+
+        assertDeepCopyFailure(
+            one, two,
+            "root->get(two): null != ExampleOne(24232)");
+    }
+
     private void assertDeepCopyFailure(
         Object one,
         Object two,
@@ -221,6 +283,16 @@ public class ReflectiveDeepCopyTest
         {
             try
             {
+                if (one == null && two == null)
+                {
+                    return DeepCopyMatchResult.success();
+                }
+
+                if (one == null || two == null)
+                {
+                    return fail("" + one + " != " + two);
+                }
+
                 if (!one.getClass().equals(two.getClass()))
                 {
                     return fail(
@@ -228,16 +300,14 @@ public class ReflectiveDeepCopyTest
                         " versus " + two.getClass().getName() + ")");
                 }
 
-                if (one.getClass().equals(String.class))
+                if (isValueType(one))
                 {
-                    if (!one.equals(two))
-                    {
-                        return unequalField(one, two);
-                    }
-                    else
-                    {
-                        return DeepCopyMatchResult.success();
-                    }
+                    return performValueTypeMatch(one, two);
+                }
+
+                if (one instanceof Map)
+                {
+                    return performMapTypeMatch(one, two);
                 }
 
                 if (one == two)
@@ -245,9 +315,14 @@ public class ReflectiveDeepCopyTest
                     return fail("The same instance cannot be a deep copy of itself");
                 }
 
-                Field[] fields = one.getClass().getDeclaredFields();
+                final Field[] fields = one.getClass().getDeclaredFields();
                 for (Field field : fields)
                 {
+                    if (field.isSynthetic() || Modifier.isStatic(field.getModifiers()))
+                    {
+                        continue;
+                    }
+
                     fieldPath.push(field.getName());
                     field.setAccessible(true);
 
@@ -262,10 +337,7 @@ public class ReflectiveDeepCopyTest
                                 {
                                     return unequalField(first, second);
                                 }
-                                else
-                                {
-                                    break;
-                                }
+                                break;
                         }
                     }
                     else
@@ -282,6 +354,58 @@ public class ReflectiveDeepCopyTest
             {
                 return DeepCopyMatchResult.failure(e.getMessage());
             }
+        }
+
+        private DeepCopyMatchResult performMapTypeMatch(Object one, Object two)
+        {
+            final Map mapOne = (Map) one;
+            final Map mapTwo = (Map) two;
+            for (Object o : mapOne.entrySet())
+            {
+                final Object key = ((Map.Entry) o).getKey();
+                fieldPath.push("get(" + key.toString() + ")");
+
+                final DeepCopyMatchResult result = matches(mapOne.get(key), mapTwo.get(key));
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+
+            for (Object o : mapTwo.entrySet())
+            {
+                final Object key = ((Map.Entry) o).getKey();
+                fieldPath.push("get(" + key.toString() + ")");
+
+                final DeepCopyMatchResult result = matches(mapOne.get(key), mapTwo.get(key));
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+
+            return DeepCopyMatchResult.success();
+        }
+
+        private DeepCopyMatchResult performValueTypeMatch(Object one, Object two)
+        {
+            if (!one.equals(two))
+            {
+                return unequalField(one, two);
+            }
+            else
+            {
+                return DeepCopyMatchResult.success();
+            }
+        }
+
+        private boolean isValueType(Object one)
+        {
+            return one.getClass().equals(String.class);
         }
 
         private DeepCopyMatchResult unequalField(Object first, Object second)
