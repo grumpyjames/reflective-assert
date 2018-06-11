@@ -27,7 +27,7 @@ public class ReflectiveDeepCopyTest
         final ExampleOne one = new ExampleOne(4563L);
         final ExampleOne two = new ExampleOne(4563L);
 
-        assertDeepCopyMatches(one, two);
+        assertDeepCopySuccess(one, two);
     }
 
     @Test
@@ -38,7 +38,7 @@ public class ReflectiveDeepCopyTest
         assertDeepCopyFailure(
             one,
             one,
-            "the same instance cannot be a deep copy of itself");
+            "root: The same instance cannot be a deep copy of itself");
     }
 
     @Test
@@ -50,7 +50,125 @@ public class ReflectiveDeepCopyTest
         assertDeepCopyFailure(
             one,
             two,
-            "root->firstField 4563 != 4564");
+            "root->firstField: 4563 != 4564");
+    }
+
+    private static final class ExampleTwo
+    {
+        private final long firstField;
+        private final long secondField;
+
+        private ExampleTwo(long firstField, long secondField)
+        {
+            this.firstField = firstField;
+            this.secondField = secondField;
+        }
+    }
+
+    @Test
+    public void two_instances_with_one_field_that_matches_and_another_that_does_not_cannot_be_deep_copies_of_each_other()
+    {
+        final ExampleTwo one = new ExampleTwo(34643L, 344L);
+        final ExampleTwo two = new ExampleTwo(34643L, 346L);
+        assertDeepCopyFailure(
+            one,
+            two,
+            "root->secondField: 344 != 346");
+    }
+
+    @Test
+    public void the_first_non_matching_field_is_enough_to_stop()
+    {
+        final ExampleTwo one = new ExampleTwo(34643L, 344L);
+        final ExampleTwo two = new ExampleTwo(3461L, 346L);
+        assertDeepCopyFailure(
+            one,
+            two,
+            "root->firstField: 34643 != 3461");
+    }
+
+    @Test
+    public void two_matching_fields()
+    {
+        final ExampleTwo one = new ExampleTwo(34643L, 344L);
+        final ExampleTwo two = new ExampleTwo(34643L, 344L);
+        assertDeepCopySuccess(
+            one,
+            two);
+    }
+
+    private static final class ExampleThree
+    {
+        private final String firstField;
+
+        private ExampleThree(String firstField)
+        {
+            this.firstField = firstField;
+        }
+    }
+
+    @Test
+    public void a_single_object_field_is_a_success_if_it_is_the_same_instance_of_a_string()
+    {
+        final String value = "foo";
+        ExampleThree one = new ExampleThree(value);
+        ExampleThree two = new ExampleThree(value);
+
+        assertDeepCopySuccess(
+            one, two);
+    }
+
+    @Test
+    public void a_single_object_field_is_a_failure_if_that_string_field_differs()
+    {
+        ExampleThree one = new ExampleThree("foo");
+        ExampleThree two = new ExampleThree("bar");
+
+        assertDeepCopyFailure(
+            one, two, "root->firstField: foo != bar");
+    }
+
+    private static final class ExampleFour
+    {
+        private final ExampleOne exampleOne;
+
+        private ExampleFour(ExampleOne exampleOne)
+        {
+            this.exampleOne = exampleOne;
+        }
+    }
+
+    @Test
+    public void same_nested_instance_is_a_deep_copy_failure()
+    {
+        ExampleOne exampleOne = new ExampleOne(25535345L);
+
+        ExampleFour one = new ExampleFour(exampleOne);
+        ExampleFour two = new ExampleFour(exampleOne);
+
+        assertDeepCopyFailure(
+            one, two,
+            "root->exampleOne: The same instance cannot be a deep copy of itself");
+    }
+
+    @Test
+    public void nested_deep_copy_is_deep_copy_success()
+    {
+        ExampleFour one = new ExampleFour(new ExampleOne(25535345L));
+        ExampleFour two = new ExampleFour(new ExampleOne(25535345L));
+
+        assertDeepCopySuccess(one, two);
+    }
+
+    @Test
+    public void objects_of_different_class_cannot_be_deep_copies_of_each_other()
+    {
+        assertDeepCopyFailure(
+            "foo",
+            new ExampleOne(4535L),
+            "root: objects are not the same type " +
+                "(java.lang.String versus net.digihippo.reflect.ReflectiveDeepCopyTest$ExampleOne)"
+        );
     }
 
     private void assertDeepCopyFailure(
@@ -59,11 +177,11 @@ public class ReflectiveDeepCopyTest
         String message)
     {
         DeepCopyMatchResult result = new DeepCopyAssertion().matches(one, two);
-        assertEquals(message, result.failureDescription);
         assertFalse(result.isDeepCopy);
+        assertEquals(message, result.failureDescription);
     }
 
-    private void assertDeepCopyMatches(Object one, Object two)
+    private void assertDeepCopySuccess(Object one, Object two)
     {
         assertTrue(new DeepCopyAssertion().matches(one, two).isDeepCopy);
     }
@@ -103,11 +221,29 @@ public class ReflectiveDeepCopyTest
         {
             try
             {
-                if (one == two)
+                if (!one.getClass().equals(two.getClass()))
                 {
-                    return DeepCopyMatchResult.failure("the same instance cannot be a deep copy of itself");
+                    return fail(
+                        "objects are not the same type ("+ one.getClass().getName() +
+                        " versus " + two.getClass().getName() + ")");
                 }
 
+                if (one.getClass().equals(String.class))
+                {
+                    if (!one.equals(two))
+                    {
+                        return unequalField(one, two);
+                    }
+                    else
+                    {
+                        return DeepCopyMatchResult.success();
+                    }
+                }
+
+                if (one == two)
+                {
+                    return fail("The same instance cannot be a deep copy of itself");
+                }
 
                 Field[] fields = one.getClass().getDeclaredFields();
                 for (Field field : fields)
@@ -128,11 +264,13 @@ public class ReflectiveDeepCopyTest
                                 }
                                 else
                                 {
-                                    continue;
+                                    break;
                                 }
-                            default:
-                                throw new UnsupportedOperationException();
                         }
+                    }
+                    else
+                    {
+                        return matches(field.get(one), field.get(two));
                     }
 
                     fieldPath.pop();
@@ -148,6 +286,11 @@ public class ReflectiveDeepCopyTest
 
         private DeepCopyMatchResult unequalField(Object first, Object second)
         {
+            return fail(first + " != " + second);
+        }
+
+        private DeepCopyMatchResult fail(String message)
+        {
             final StringBuilder builder = new StringBuilder();
             for (String piece : fieldPath)
             {
@@ -159,7 +302,7 @@ public class ReflectiveDeepCopyTest
             String fieldPath = builder.toString();
 
             return DeepCopyMatchResult.failure(
-                fieldPath + " " + first + " != " + second
+                fieldPath + ": " + message
             );
         }
     }
