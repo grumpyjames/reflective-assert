@@ -452,6 +452,16 @@ public class ReflectiveDeepCopyTest
             "root->[1]: null != false");
     }
 
+    @Test
+    public void do_not_confuse_null_with_absence_in_object_arrays()
+    {
+        final String[] one = new String[] {null};
+        final String[] two = new String[0];
+
+        assertDeepCopyFailure(one, two, "root->[0]: null != <absent>");
+        assertDeepCopyFailure(two, one, "root->[0]: <absent> != null");
+    }
+
     private void assertDeepCopyFailure(
         Object one,
         Object two,
@@ -607,36 +617,44 @@ public class ReflectiveDeepCopyTest
             }
             else
             {
-                final Object[] arrayOne = (Object[]) one;
-                final Object[] arrayTwo = (Object[]) two;
-                for (int i = 0; i < arrayOne.length; i++)
-                {
-                    fieldPath.push("[" + i + "]");
-
-                    final DeepCopyMatchResult result =
-                        matches(arrayOne[i], i < arrayTwo.length ? arrayTwo[i] : null);
-                    if (!result.isDeepCopy)
-                    {
-                        return result;
-                    }
-
-                    fieldPath.pop();
-                }
-                for (int i = 0; i < arrayTwo.length; i++)
-                {
-                    fieldPath.push("[" + i + "]");
-
-                    final DeepCopyMatchResult result =
-                        matches(i < arrayOne.length ? arrayOne[i] : null, arrayTwo[i]);
-                    if (!result.isDeepCopy)
-                    {
-                        return result;
-                    }
-
-                    fieldPath.pop();
-                }
+                return runObjectArrayCheck((Object[]) one, (Object[]) two);
             }
+        }
 
+        private DeepCopyMatchResult runObjectArrayCheck(Object[] one, Object[] two)
+        {
+            for (int i = 0; i < one.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                if (i >= two.length)
+                {
+                    return unequalField(one[i], "<absent>");
+                }
+                final DeepCopyMatchResult result = matches(one[i], two[i]);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+            for (int i = 0; i < two.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                if (i >= one.length)
+                {
+                    return unequalField("<absent>", two[i]);
+                }
+                final DeepCopyMatchResult result = matches(one[i], two[i]);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
             return DeepCopyMatchResult.success();
         }
 
