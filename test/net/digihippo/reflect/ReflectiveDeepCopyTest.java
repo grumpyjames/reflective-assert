@@ -319,6 +319,120 @@ public class ReflectiveDeepCopyTest
         assertDeepCopySuccess(true, true);
     }
 
+    @Test
+    public void same_array_of_primitives_is_deep_copy_failure()
+    {
+        long[] one = {13L, 5L};
+        assertDeepCopyFailure(one, one, "root: The same instance cannot be a deep copy of itself");
+    }
+
+    @Test
+    public void two_arrays_of_same_primitives_is_deep_copy_success()
+    {
+        assertDeepCopySuccess(new long[]{13L, 5L}, new long[]{13L, 5L});
+        assertDeepCopySuccess(new int[]{13, 5}, new int[]{13, 5});
+        assertDeepCopySuccess(new float[]{13F, 5F}, new float[]{13F, 5F});
+        assertDeepCopySuccess(new double[]{13D, 5D}, new double[]{13D, 5D});
+        assertDeepCopySuccess(new byte[]{(byte)13, (byte)5}, new byte[]{(byte)13, (byte)5});
+        assertDeepCopySuccess(new boolean[]{true, false}, new boolean[]{true, false});
+    }
+
+    @Test
+    public void two_arrays_of_different_longs_is_deep_copy_failure()
+    {
+        assertDeepCopyFailure(
+            new long[]{13L, 5L}, new long[]{13L, 6L},
+            "root->[1]: 5 != 6");
+
+        assertDeepCopyFailure(
+            new long[]{13L, 5L}, new long[]{13L},
+            "root->[1]: 5 != null");
+
+        assertDeepCopyFailure(
+            new long[]{13L}, new long[]{13L, 5L},
+            "root->[1]: null != 5");
+    }
+
+    @Test
+    public void two_arrays_of_different_ints_is_deep_copy_failure()
+    {
+        assertDeepCopyFailure(
+            new int[]{13, 5}, new int[]{13, 6},
+            "root->[1]: 5 != 6");
+
+        assertDeepCopyFailure(
+            new int[]{13, 5}, new int[]{13},
+            "root->[1]: 5 != null");
+
+        assertDeepCopyFailure(
+            new int[]{13}, new int[]{13, 5},
+            "root->[1]: null != 5");
+    }
+
+    @Test
+    public void two_arrays_of_different_bytes_is_deep_copy_failure()
+    {
+        assertDeepCopyFailure(
+            new byte[]{13, 5}, new byte[]{13, 6},
+            "root->[1]: 5 != 6");
+
+        assertDeepCopyFailure(
+            new byte[]{13, 5}, new byte[]{13},
+            "root->[1]: 5 != null");
+
+        assertDeepCopyFailure(
+            new byte[]{13}, new byte[]{13, 5},
+            "root->[1]: null != 5");
+    }
+
+    @Test
+    public void two_arrays_of_different_floats_is_deep_copy_failure()
+    {
+        assertDeepCopyFailure(
+            new float[]{13, 5}, new float[]{13, 6},
+            "root->[1]: 5.0 != 6.0");
+
+        assertDeepCopyFailure(
+            new float[]{13, 5}, new float[]{13},
+            "root->[1]: 5.0 != null");
+
+        assertDeepCopyFailure(
+            new float[]{13}, new float[]{13, 5},
+            "root->[1]: null != 5.0");
+    }
+
+    @Test
+    public void two_arrays_of_different_doubles_is_deep_copy_failure()
+    {
+        assertDeepCopyFailure(
+            new double[]{13, 5}, new double[]{13, 6},
+            "root->[1]: 5.0 != 6.0");
+
+        assertDeepCopyFailure(
+            new double[]{13, 5}, new double[]{13},
+            "root->[1]: 5.0 != null");
+
+        assertDeepCopyFailure(
+            new double[]{13}, new double[]{13, 5},
+            "root->[1]: null != 5.0");
+    }
+
+    @Test
+    public void two_arrays_of_different_booleans_is_deep_copy_failure()
+    {
+        assertDeepCopyFailure(
+            new boolean[]{true, false}, new boolean[]{true, true},
+            "root->[1]: false != true");
+
+        assertDeepCopyFailure(
+            new boolean[]{true, false}, new boolean[]{true},
+            "root->[1]: false != null");
+
+        assertDeepCopyFailure(
+            new boolean[]{true}, new boolean[]{true, false},
+            "root->[1]: null != false");
+    }
+
     private void assertDeepCopyFailure(
         Object one,
         Object two,
@@ -397,6 +511,11 @@ public class ReflectiveDeepCopyTest
                     return fail("The same instance cannot be a deep copy of itself");
                 }
 
+                if (one.getClass().isArray())
+                {
+                    return performArrayMatch(one, two);
+                }
+
                 if (one instanceof Map)
                 {
                     return performMapTypeMatch(one, two);
@@ -434,6 +553,258 @@ public class ReflectiveDeepCopyTest
             {
                 return DeepCopyMatchResult.failure(e.getMessage());
             }
+        }
+
+        private DeepCopyMatchResult performArrayMatch(Object one, Object two)
+        {
+            Class<?> componentType = one.getClass().getComponentType();
+            if (componentType.isPrimitive())
+            {
+                if (componentType == long.class)
+                {
+                    return runLongArrayCheck((long[]) one, (long[]) two);
+                }
+                else if (componentType == int.class)
+                {
+                    return runIntArrayCheck((int[]) one, (int[]) two);
+                }
+                else if (componentType == double.class)
+                {
+                    return runDoubleArrayCheck((double[]) one, (double[]) two);
+                }
+                else if (componentType == float.class)
+                {
+                    return runFloatArrayCheck((float[]) one, (float[]) two);
+                }
+                else if (componentType == boolean.class)
+                {
+                    return runBooleanArrayCheck((boolean[]) one, (boolean[]) two);
+                }
+                else if (componentType == byte.class)
+                {
+                    return runByteArrayCheck((byte[]) one, (byte[]) two);
+                }
+                throw new UnsupportedOperationException("I have no idea what " + componentType + " is.");
+            }
+            else
+            {
+                final Object[] arrayOne = (Object[]) one;
+                final Object[] arrayTwo = (Object[]) two;
+                for (int i = 0; i < arrayOne.length; i++)
+                {
+                    fieldPath.push("[" + i + "]");
+
+                    final DeepCopyMatchResult result =
+                        matches(arrayOne[i], i < arrayTwo.length ? arrayTwo[i] : null);
+                    if (!result.isDeepCopy)
+                    {
+                        return result;
+                    }
+
+                    fieldPath.pop();
+                }
+                for (int i = 0; i < arrayTwo.length; i++)
+                {
+                    fieldPath.push("[" + i + "]");
+
+                    final DeepCopyMatchResult result =
+                        matches(i < arrayOne.length ? arrayOne[i] : null, arrayTwo[i]);
+                    if (!result.isDeepCopy)
+                    {
+                        return result;
+                    }
+
+                    fieldPath.pop();
+                }
+            }
+
+            return DeepCopyMatchResult.success();
+        }
+
+        private DeepCopyMatchResult runLongArrayCheck(long[] one, long[] two)
+        {
+            for (int i = 0; i < one.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                final DeepCopyMatchResult result =
+                    matches(one[i], i < two.length ? two[i] : null);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+            for (int i = 0; i < two.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                final DeepCopyMatchResult result =
+                    matches(i < one.length ? one[i] : null, two[i]);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+            return DeepCopyMatchResult.success();
+        }
+
+        private DeepCopyMatchResult runIntArrayCheck(int[] one, int[] two)
+        {
+            for (int i = 0; i < one.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                final DeepCopyMatchResult result =
+                    matches(one[i], i < two.length ? two[i] : null);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+            for (int i = 0; i < two.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                final DeepCopyMatchResult result =
+                    matches(i < one.length ? one[i] : null, two[i]);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+            return DeepCopyMatchResult.success();
+        }
+
+        private DeepCopyMatchResult runByteArrayCheck(byte[] one, byte[] two)
+        {
+            for (int i = 0; i < one.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                final DeepCopyMatchResult result =
+                    matches(one[i], i < two.length ? two[i] : null);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+            for (int i = 0; i < two.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                final DeepCopyMatchResult result =
+                    matches(i < one.length ? one[i] : null, two[i]);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+            return DeepCopyMatchResult.success();
+        }
+
+        private DeepCopyMatchResult runFloatArrayCheck(float[] one, float[] two)
+        {
+            for (int i = 0; i < one.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                final DeepCopyMatchResult result =
+                    matches(one[i], i < two.length ? two[i] : null);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+            for (int i = 0; i < two.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                final DeepCopyMatchResult result =
+                    matches(i < one.length ? one[i] : null, two[i]);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+            return DeepCopyMatchResult.success();
+        }
+
+        private DeepCopyMatchResult runDoubleArrayCheck(double[] one, double[] two)
+        {
+            for (int i = 0; i < one.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                final DeepCopyMatchResult result =
+                    matches(one[i], i < two.length ? two[i] : null);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+            for (int i = 0; i < two.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                final DeepCopyMatchResult result =
+                    matches(i < one.length ? one[i] : null, two[i]);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+            return DeepCopyMatchResult.success();
+        }
+
+        private DeepCopyMatchResult runBooleanArrayCheck(boolean[] one, boolean[] two)
+        {
+            for (int i = 0; i < one.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                final DeepCopyMatchResult result =
+                    matches(one[i], i < two.length ? two[i] : null);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+            for (int i = 0; i < two.length; i++)
+            {
+                fieldPath.push("[" + i + "]");
+
+                final DeepCopyMatchResult result =
+                    matches(i < one.length ? one[i] : null, two[i]);
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+            return DeepCopyMatchResult.success();
         }
 
         private DeepCopyMatchResult performListTypeMatch(Object one, Object two)
