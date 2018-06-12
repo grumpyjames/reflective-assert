@@ -308,6 +308,12 @@ public class ReflectiveDeepCopyTest
             "root->at(1): ExampleOne(2455) != null");
     }
 
+    @Test
+    public void primitives_of_same_value_are_deep_copies()
+    {
+        assertDeepCopySuccess(1L, 1L);
+    }
+
     private void assertDeepCopyFailure(
         Object one,
         Object two,
@@ -320,7 +326,8 @@ public class ReflectiveDeepCopyTest
 
     private void assertDeepCopySuccess(Object one, Object two)
     {
-        assertTrue(new DeepCopyAssertion().matches(one, two).isDeepCopy);
+        DeepCopyMatchResult matches = new DeepCopyAssertion().matches(one, two);
+        assertTrue(matches.failureDescription, matches.isDeepCopy);
     }
 
     private static class DeepCopyMatchResult
@@ -368,11 +375,6 @@ public class ReflectiveDeepCopyTest
                     return fail("" + one + " != " + two);
                 }
 
-                if (one == two)
-                {
-                    return fail("The same instance cannot be a deep copy of itself");
-                }
-
                 if (!one.getClass().equals(two.getClass()))
                 {
                     return fail(
@@ -383,6 +385,11 @@ public class ReflectiveDeepCopyTest
                 if (isValueType(one))
                 {
                     return performValueTypeMatch(one, two);
+                }
+
+                if (one == two)
+                {
+                    return fail("The same instance cannot be a deep copy of itself");
                 }
 
                 if (one instanceof Map)
@@ -404,25 +411,13 @@ public class ReflectiveDeepCopyTest
                     }
 
                     fieldPath.push(field.getName());
+
                     field.setAccessible(true);
 
-                    if (field.getType().isPrimitive())
+                    DeepCopyMatchResult result = matches(field.get(one), field.get(two));
+                    if (!result.isDeepCopy)
                     {
-                        switch (field.getType().getName())
-                        {
-                            case "long":
-                                long first = field.getLong(one);
-                                long second = field.getLong(two);
-                                if (first != second)
-                                {
-                                    return unequalField(first, second);
-                                }
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        return matches(field.get(one), field.get(two));
+                        return result;
                     }
 
                     fieldPath.pop();
@@ -529,9 +524,15 @@ public class ReflectiveDeepCopyTest
             }
         }
 
+        private final Set<Class<?>> valueTypes = new HashSet<>();
+        {
+            valueTypes.add(String.class);
+            valueTypes.add(Long.class);
+        }
+
         private boolean isValueType(Object one)
         {
-            return one.getClass().equals(String.class);
+            return valueTypes.contains(one.getClass());
         }
 
         private DeepCopyMatchResult unequalField(Object first, Object second)
