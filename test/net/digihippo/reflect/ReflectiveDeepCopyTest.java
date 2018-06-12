@@ -301,11 +301,11 @@ public class ReflectiveDeepCopyTest
 
         assertDeepCopyFailure(
             one, two,
-            "root->at(1): null != ExampleOne(2455)");
+            "root->at(1): <absent> != ExampleOne(2455)");
 
         assertDeepCopyFailure(
             two, one,
-            "root->at(1): ExampleOne(2455) != null");
+            "root->at(1): ExampleOne(2455) != <absent>");
     }
 
     @Test
@@ -335,6 +335,25 @@ public class ReflectiveDeepCopyTest
         assertDeepCopySuccess(new double[]{13D, 5D}, new double[]{13D, 5D});
         assertDeepCopySuccess(new byte[]{(byte)13, (byte)5}, new byte[]{(byte)13, (byte)5});
         assertDeepCopySuccess(new boolean[]{true, false}, new boolean[]{true, false});
+    }
+
+    @Test
+    public void two_lists_that_should_not_be_deep_copies_of_each_other()
+    {
+        final List<String> one = new ArrayList<>();
+        one.add(null);
+        final List<String> two = new ArrayList<>();
+        assertDeepCopyFailure(
+            one,
+            two,
+            "root->at(0): null != <absent>"
+        );
+
+        assertDeepCopyFailure(
+            two,
+            one,
+            "root->at(0): <absent> != null"
+        );
     }
 
     @Test
@@ -818,9 +837,12 @@ public class ReflectiveDeepCopyTest
             {
                 fieldPath.push("at(" + index + ")");
 
-                final Object fromListTwo = iterator.hasNext() ? iterator.next() : null;
+                if (!iterator.hasNext())
+                {
+                    return unequalField(fromListOne, "<absent>");
+                }
 
-                final DeepCopyMatchResult match = matches(fromListOne, fromListTwo);
+                final DeepCopyMatchResult match = matches(fromListOne, iterator.next());
 
                 if (!match.isDeepCopy)
                 {
@@ -837,9 +859,12 @@ public class ReflectiveDeepCopyTest
             {
                 fieldPath.push("at(" + index + ")");
 
-                final Object fromListOne = iterator.hasNext() ? iterator.next() : null;
+                if (!iterator.hasNext())
+                {
+                    return unequalField("<absent>", fromListTwo);
+                }
 
-                final DeepCopyMatchResult match = matches(fromListOne, fromListTwo);
+                final DeepCopyMatchResult match = matches(iterator.next(), fromListTwo);
 
                 if (!match.isDeepCopy)
                 {
