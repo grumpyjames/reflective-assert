@@ -542,41 +542,20 @@ public class ReflectiveDeepCopyTest
 
                 if (one.getClass().isArray())
                 {
-                    return performArrayMatch(one, two);
+                    return arrayMatch(one, two);
                 }
 
                 if (one instanceof Map)
                 {
-                    return performMapTypeMatch(one, two);
+                    return mapTypeMatch(one, two);
                 }
 
                 if (one instanceof List)
                 {
-                    return performListTypeMatch(one, two);
+                    return listTypeMatch(one, two);
                 }
 
-                final Field[] fields = one.getClass().getDeclaredFields();
-                for (Field field : fields)
-                {
-                    if (field.isSynthetic() || Modifier.isStatic(field.getModifiers()))
-                    {
-                        continue;
-                    }
-
-                    fieldPath.push(field.getName());
-
-                    field.setAccessible(true);
-
-                    DeepCopyMatchResult result = matches(field.get(one), field.get(two));
-                    if (!result.isDeepCopy)
-                    {
-                        return result;
-                    }
-
-                    fieldPath.pop();
-                }
-
-                return DeepCopyMatchResult.success();
+                return fieldByFieldMatch(one, two);
             }
             catch (IllegalAccessException e)
             {
@@ -584,44 +563,70 @@ public class ReflectiveDeepCopyTest
             }
         }
 
-        private DeepCopyMatchResult performArrayMatch(Object one, Object two)
+        private DeepCopyMatchResult fieldByFieldMatch(Object one, Object two) throws IllegalAccessException
+        {
+            final Field[] fields = one.getClass().getDeclaredFields();
+            for (Field field : fields)
+            {
+                if (field.isSynthetic() || Modifier.isStatic(field.getModifiers()))
+                {
+                    continue;
+                }
+
+                field.setAccessible(true);
+
+                fieldPath.push(field.getName());
+
+                DeepCopyMatchResult result = matches(field.get(one), field.get(two));
+                if (!result.isDeepCopy)
+                {
+                    return result;
+                }
+
+                fieldPath.pop();
+            }
+
+            return DeepCopyMatchResult.success();
+        }
+
+        private DeepCopyMatchResult arrayMatch(Object one, Object two)
         {
             Class<?> componentType = one.getClass().getComponentType();
             if (componentType.isPrimitive())
             {
                 if (componentType == long.class)
                 {
-                    return runLongArrayCheck((long[]) one, (long[]) two);
+                    return longArrayMatch((long[]) one, (long[]) two);
                 }
                 else if (componentType == int.class)
                 {
-                    return runIntArrayCheck((int[]) one, (int[]) two);
+                    return intArrayMatch((int[]) one, (int[]) two);
                 }
                 else if (componentType == double.class)
                 {
-                    return runDoubleArrayCheck((double[]) one, (double[]) two);
+                    return doubleArrayMatch((double[]) one, (double[]) two);
                 }
                 else if (componentType == float.class)
                 {
-                    return runFloatArrayCheck((float[]) one, (float[]) two);
+                    return floatArrayMatch((float[]) one, (float[]) two);
                 }
                 else if (componentType == boolean.class)
                 {
-                    return runBooleanArrayCheck((boolean[]) one, (boolean[]) two);
+                    return booleanArrayMatch((boolean[]) one, (boolean[]) two);
                 }
                 else if (componentType == byte.class)
                 {
-                    return runByteArrayCheck((byte[]) one, (byte[]) two);
+                    return byteArrayMatch((byte[]) one, (byte[]) two);
                 }
                 throw new UnsupportedOperationException("I have no idea what " + componentType + " is.");
             }
             else
             {
-                return runObjectArrayCheck((Object[]) one, (Object[]) two);
+                return objectArrayMatch((Object[]) one, (Object[]) two);
             }
         }
 
-        private DeepCopyMatchResult runObjectArrayCheck(Object[] one, Object[] two)
+        private DeepCopyMatchResult objectArrayMatch(Object[] one, Object[] two)
         {
             for (int i = 0; i < one.length; i++)
             {
@@ -658,7 +663,7 @@ public class ReflectiveDeepCopyTest
             return DeepCopyMatchResult.success();
         }
 
-        private DeepCopyMatchResult runLongArrayCheck(long[] one, long[] two)
+        private DeepCopyMatchResult longArrayMatch(long[] one, long[] two)
         {
             for (int i = 0; i < one.length; i++)
             {
@@ -689,7 +694,7 @@ public class ReflectiveDeepCopyTest
             return DeepCopyMatchResult.success();
         }
 
-        private DeepCopyMatchResult runIntArrayCheck(int[] one, int[] two)
+        private DeepCopyMatchResult intArrayMatch(int[] one, int[] two)
         {
             for (int i = 0; i < one.length; i++)
             {
@@ -720,7 +725,7 @@ public class ReflectiveDeepCopyTest
             return DeepCopyMatchResult.success();
         }
 
-        private DeepCopyMatchResult runByteArrayCheck(byte[] one, byte[] two)
+        private DeepCopyMatchResult byteArrayMatch(byte[] one, byte[] two)
         {
             for (int i = 0; i < one.length; i++)
             {
@@ -751,7 +756,7 @@ public class ReflectiveDeepCopyTest
             return DeepCopyMatchResult.success();
         }
 
-        private DeepCopyMatchResult runFloatArrayCheck(float[] one, float[] two)
+        private DeepCopyMatchResult floatArrayMatch(float[] one, float[] two)
         {
             for (int i = 0; i < one.length; i++)
             {
@@ -782,7 +787,7 @@ public class ReflectiveDeepCopyTest
             return DeepCopyMatchResult.success();
         }
 
-        private DeepCopyMatchResult runDoubleArrayCheck(double[] one, double[] two)
+        private DeepCopyMatchResult doubleArrayMatch(double[] one, double[] two)
         {
             for (int i = 0; i < one.length; i++)
             {
@@ -813,7 +818,7 @@ public class ReflectiveDeepCopyTest
             return DeepCopyMatchResult.success();
         }
 
-        private DeepCopyMatchResult runBooleanArrayCheck(boolean[] one, boolean[] two)
+        private DeepCopyMatchResult booleanArrayMatch(boolean[] one, boolean[] two)
         {
             for (int i = 0; i < one.length; i++)
             {
@@ -844,7 +849,7 @@ public class ReflectiveDeepCopyTest
             return DeepCopyMatchResult.success();
         }
 
-        private DeepCopyMatchResult performListTypeMatch(Object one, Object two)
+        private DeepCopyMatchResult listTypeMatch(Object one, Object two)
         {
             final List listOne = (List) one;
             final List listTwo = (List) two;
@@ -896,7 +901,7 @@ public class ReflectiveDeepCopyTest
             return DeepCopyMatchResult.success();
         }
 
-        private DeepCopyMatchResult performMapTypeMatch(Object one, Object two)
+        private DeepCopyMatchResult mapTypeMatch(Object one, Object two)
         {
             final Map mapOne = (Map) one;
             final Map mapTwo = (Map) two;
