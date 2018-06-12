@@ -312,6 +312,11 @@ public class ReflectiveDeepCopyTest
     public void primitives_of_same_value_are_deep_copies()
     {
         assertDeepCopySuccess(1L, 1L);
+        assertDeepCopySuccess(1, 1);
+        assertDeepCopySuccess((byte)1, (byte)1);
+        assertDeepCopySuccess(1D, 1D);
+        assertDeepCopySuccess(1F, 1F);
+        assertDeepCopySuccess(true, true);
     }
 
     private void assertDeepCopyFailure(
@@ -528,6 +533,11 @@ public class ReflectiveDeepCopyTest
         {
             valueTypes.add(String.class);
             valueTypes.add(Long.class);
+            valueTypes.add(Integer.class);
+            valueTypes.add(Float.class);
+            valueTypes.add(Double.class);
+            valueTypes.add(Boolean.class);
+            valueTypes.add(Byte.class);
         }
 
         private boolean isValueType(Object one)
