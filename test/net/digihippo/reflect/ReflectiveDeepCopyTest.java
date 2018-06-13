@@ -22,6 +22,24 @@ public class ReflectiveDeepCopyTest
         {
             return "ExampleOne(" + firstField + ")";
         }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ExampleOne that = (ExampleOne) o;
+
+            return firstField == that.firstField;
+
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return (int) (firstField ^ (firstField >>> 32));
+        }
     }
 
     @Test
@@ -458,6 +476,51 @@ public class ReflectiveDeepCopyTest
 
         assertDeepCopyFailure(one, two, "root->[0]: null != <absent>");
         assertDeepCopyFailure(two, one, "root->[0]: <absent> != null");
+    }
+
+    @Test
+    public void sets_with_identical_value_content_are_deep_copies()
+    {
+        final HashSet<Long> one = new HashSet<>();
+        final HashSet<Long> two = new HashSet<>();
+
+        one.add(2L);
+        one.add(4L);
+        two.add(2L);
+        two.add(4L);
+
+        assertDeepCopySuccess(one, two);
+    }
+
+    @Test
+    public void sets_with_identically_valued_content_but_different_references_are_deep_copies()
+    {
+        final HashSet<ExampleOne> one = new HashSet<>();
+        final HashSet<ExampleOne> two = new HashSet<>();
+
+        one.add(new ExampleOne(2L));
+        one.add(new ExampleOne(4L));
+        two.add(new ExampleOne(2L));
+        two.add(new ExampleOne(4L));
+
+        assertDeepCopySuccess(one, two);
+    }
+
+    @Test
+    public void sets_with_identically_valued_content_and_same_references_are_deep_copies()
+    {
+        final HashSet<ExampleOne> one = new HashSet<>();
+        final HashSet<ExampleOne> two = new HashSet<>();
+
+        ExampleOne same = new ExampleOne(4L);
+        one.add(new ExampleOne(2L));
+        one.add(same);
+        two.add(new ExampleOne(2L));
+        two.add(same);
+
+        assertDeepCopyFailure(
+            one, two,
+            "root->at(1): The same instance cannot be a deep copy of itself");
     }
 
     private void assertDeepCopyFailure(

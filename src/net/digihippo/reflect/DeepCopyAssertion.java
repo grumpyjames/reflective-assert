@@ -54,7 +54,7 @@ final class DeepCopyAssertion
                 return mapTypeMatch(one, two);
             }
 
-            if (one instanceof List)
+            if (one instanceof Collection)
             {
                 return listTypeMatch(one, two);
             }
@@ -355,21 +355,23 @@ final class DeepCopyAssertion
 
     private DeepCopyMatchResult listTypeMatch(Object one, Object two)
     {
-        final List listOne = (List) one;
-        final List listTwo = (List) two;
+        final Collection listOne = (Collection) one;
+        final Collection listTwo = (Collection) two;
 
         int index = 0;
-        Iterator iterator = listTwo.iterator();
-        for (Object fromListOne : listOne)
+        Iterator primaryIterator = listOne.iterator();
+        Iterator secondaryIterator = listTwo.iterator();
+        while (primaryIterator.hasNext())
         {
+            final Object fromListOne = primaryIterator.next();
             fieldPath.push("at(" + index + ")");
 
-            if (!iterator.hasNext())
+            if (!secondaryIterator.hasNext())
             {
                 return unequalField(fromListOne, "<absent>");
             }
 
-            final DeepCopyMatchResult match = matches(fromListOne, iterator.next());
+            final DeepCopyMatchResult match = matches(fromListOne, secondaryIterator.next());
 
             if (!match.isDeepCopy)
             {
@@ -380,18 +382,20 @@ final class DeepCopyAssertion
             ++index;
         }
 
-        iterator = listOne.iterator();
+        primaryIterator = listTwo.iterator();
+        secondaryIterator = listOne.iterator();
         index = 0;
-        for (Object fromListTwo : listTwo)
+        while (primaryIterator.hasNext())
         {
+            final Object fromListTwo = primaryIterator.next();
             fieldPath.push("at(" + index + ")");
 
-            if (!iterator.hasNext())
+            if (!secondaryIterator.hasNext())
             {
                 return unequalField("<absent>", fromListTwo);
             }
 
-            final DeepCopyMatchResult match = matches(iterator.next(), fromListTwo);
+            final DeepCopyMatchResult match = matches(secondaryIterator.next(), fromListTwo);
 
             if (!match.isDeepCopy)
             {
