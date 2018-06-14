@@ -56,7 +56,7 @@ final class DeepCopyAssertion
 
             if (one instanceof Collection)
             {
-                return listTypeMatch(one, two);
+                return collectionTypeMatch(one, two);
             }
 
             return fieldByFieldMatch(one, two);
@@ -353,7 +353,7 @@ final class DeepCopyAssertion
         return DeepCopyMatchResult.success();
     }
 
-    private DeepCopyMatchResult listTypeMatch(Object one, Object two)
+    private DeepCopyMatchResult collectionTypeMatch(Object one, Object two)
     {
         final Collection listOne = (Collection) one;
         final Collection listTwo = (Collection) two;
