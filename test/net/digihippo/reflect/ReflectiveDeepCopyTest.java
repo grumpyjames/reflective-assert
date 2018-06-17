@@ -526,6 +526,7 @@ public class ReflectiveDeepCopyTest
 
     private static class ExampleFive
     {
+        @SuppressWarnings("unused")
         private final LocalDate localDate;
 
         private ExampleFive(LocalDate localDate)
@@ -542,6 +543,24 @@ public class ReflectiveDeepCopyTest
         ExampleFive two = new ExampleFive(date);
 
         assertDeepCopySuccess(one, two, LocalDate.class);
+    }
+
+    private enum ExampleSix
+    {
+        ONE,
+        TWO
+    }
+
+    @Test
+    public void enums_are_values_too()
+    {
+        assertDeepCopySuccess(ExampleSix.ONE, ExampleSix.ONE);
+    }
+
+    @Test
+    public void different_enum_values_are_not_deep_copies()
+    {
+        assertDeepCopyFailure(ExampleSix.ONE, ExampleSix.TWO, "root: ONE != TWO");
     }
 
     private void assertDeepCopyFailure(

@@ -51,6 +51,18 @@ final class DeepCopyAssertion
                 return performValueTypeMatch(one, two);
             }
 
+            if (one.getClass().isEnum())
+            {
+                if (one == two)
+                {
+                    return DeepCopyMatchResult.success();
+                }
+                else
+                {
+                    return unequalField(one, two);
+                }
+            }
+
             if (one == two)
             {
                 return fail("The same instance cannot be a deep copy of itself");
