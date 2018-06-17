@@ -382,11 +382,11 @@ public class ReflectiveDeepCopyTest
 
         assertDeepCopyFailure(
             new long[]{13L, 5L}, new long[]{13L},
-            "root->[1]: 5 != null");
+            "root->[1]: 5 != <absent>");
 
         assertDeepCopyFailure(
             new long[]{13L}, new long[]{13L, 5L},
-            "root->[1]: null != 5");
+            "root->[1]: <absent> != 5");
     }
 
     @Test
@@ -398,11 +398,11 @@ public class ReflectiveDeepCopyTest
 
         assertDeepCopyFailure(
             new int[]{13, 5}, new int[]{13},
-            "root->[1]: 5 != null");
+            "root->[1]: 5 != <absent>");
 
         assertDeepCopyFailure(
             new int[]{13}, new int[]{13, 5},
-            "root->[1]: null != 5");
+            "root->[1]: <absent> != 5");
     }
 
     @Test
@@ -414,11 +414,11 @@ public class ReflectiveDeepCopyTest
 
         assertDeepCopyFailure(
             new byte[]{13, 5}, new byte[]{13},
-            "root->[1]: 5 != null");
+            "root->[1]: 5 != <absent>");
 
         assertDeepCopyFailure(
             new byte[]{13}, new byte[]{13, 5},
-            "root->[1]: null != 5");
+            "root->[1]: <absent> != 5");
     }
 
     @Test
@@ -430,11 +430,11 @@ public class ReflectiveDeepCopyTest
 
         assertDeepCopyFailure(
             new float[]{13, 5}, new float[]{13},
-            "root->[1]: 5.0 != null");
+            "root->[1]: 5.0 != <absent>");
 
         assertDeepCopyFailure(
             new float[]{13}, new float[]{13, 5},
-            "root->[1]: null != 5.0");
+            "root->[1]: <absent> != 5.0");
     }
 
     @Test
@@ -446,11 +446,11 @@ public class ReflectiveDeepCopyTest
 
         assertDeepCopyFailure(
             new double[]{13, 5}, new double[]{13},
-            "root->[1]: 5.0 != null");
+            "root->[1]: 5.0 != <absent>");
 
         assertDeepCopyFailure(
             new double[]{13}, new double[]{13, 5},
-            "root->[1]: null != 5.0");
+            "root->[1]: <absent> != 5.0");
     }
 
     @Test
@@ -462,11 +462,11 @@ public class ReflectiveDeepCopyTest
 
         assertDeepCopyFailure(
             new boolean[]{true, false}, new boolean[]{true},
-            "root->[1]: false != null");
+            "root->[1]: false != <absent>");
 
         assertDeepCopyFailure(
             new boolean[]{true}, new boolean[]{true, false},
-            "root->[1]: null != false");
+            "root->[1]: <absent> != false");
     }
 
     @Test

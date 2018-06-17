@@ -6,6 +6,8 @@ import java.util.*;
 
 final class DeepCopyAssertion
 {
+    private static final String ABSENT = "<absent>";
+
     private final Set<Class<?>> valueTypes = new HashSet<>();
     {
         valueTypes.add(String.class);
@@ -162,7 +164,7 @@ final class DeepCopyAssertion
 
             if (i >= two.length)
             {
-                return valueNotEqual(one[i], "<absent>");
+                return valueNotEqual(one[i], ABSENT);
             }
             final DeepCopyMatchResult result = matches(one[i], two[i]);
             if (!result.isDeepCopy)
@@ -178,7 +180,7 @@ final class DeepCopyAssertion
 
             if (i >= one.length)
             {
-                return valueNotEqual("<absent>", two[i]);
+                return valueNotEqual(ABSENT, two[i]);
             }
             final DeepCopyMatchResult result = matches(one[i], two[i]);
             if (!result.isDeepCopy)
@@ -198,7 +200,7 @@ final class DeepCopyAssertion
             fieldPath.push("[" + i + "]");
 
             final DeepCopyMatchResult result =
-                matches(one[i], i < two.length ? two[i] : null);
+                performValueTypeMatch(one[i], i < two.length ? two[i] : ABSENT);
             if (!result.isDeepCopy)
             {
                 return result;
@@ -211,7 +213,7 @@ final class DeepCopyAssertion
             fieldPath.push("[" + i + "]");
 
             final DeepCopyMatchResult result =
-                matches(i < one.length ? one[i] : null, two[i]);
+                performValueTypeMatch(i < one.length ? one[i] : ABSENT, two[i]);
             if (!result.isDeepCopy)
             {
                 return result;
@@ -229,7 +231,7 @@ final class DeepCopyAssertion
             fieldPath.push("[" + i + "]");
 
             final DeepCopyMatchResult result =
-                matches(one[i], i < two.length ? two[i] : null);
+                performValueTypeMatch(one[i], i < two.length ? two[i] : ABSENT);
             if (!result.isDeepCopy)
             {
                 return result;
@@ -242,7 +244,7 @@ final class DeepCopyAssertion
             fieldPath.push("[" + i + "]");
 
             final DeepCopyMatchResult result =
-                matches(i < one.length ? one[i] : null, two[i]);
+                performValueTypeMatch(i < one.length ? one[i] : ABSENT, two[i]);
             if (!result.isDeepCopy)
             {
                 return result;
@@ -260,7 +262,7 @@ final class DeepCopyAssertion
             fieldPath.push("[" + i + "]");
 
             final DeepCopyMatchResult result =
-                matches(one[i], i < two.length ? two[i] : null);
+                performValueTypeMatch(one[i], i < two.length ? two[i] : ABSENT);
             if (!result.isDeepCopy)
             {
                 return result;
@@ -273,7 +275,7 @@ final class DeepCopyAssertion
             fieldPath.push("[" + i + "]");
 
             final DeepCopyMatchResult result =
-                matches(i < one.length ? one[i] : null, two[i]);
+                performValueTypeMatch(i < one.length ? one[i] : ABSENT, two[i]);
             if (!result.isDeepCopy)
             {
                 return result;
@@ -291,7 +293,7 @@ final class DeepCopyAssertion
             fieldPath.push("[" + i + "]");
 
             final DeepCopyMatchResult result =
-                matches(one[i], i < two.length ? two[i] : null);
+                performValueTypeMatch(one[i], i < two.length ? two[i] : ABSENT);
             if (!result.isDeepCopy)
             {
                 return result;
@@ -304,7 +306,7 @@ final class DeepCopyAssertion
             fieldPath.push("[" + i + "]");
 
             final DeepCopyMatchResult result =
-                matches(i < one.length ? one[i] : null, two[i]);
+                performValueTypeMatch(i < one.length ? one[i] : ABSENT, two[i]);
             if (!result.isDeepCopy)
             {
                 return result;
@@ -322,7 +324,7 @@ final class DeepCopyAssertion
             fieldPath.push("[" + i + "]");
 
             final DeepCopyMatchResult result =
-                matches(one[i], i < two.length ? two[i] : null);
+                performValueTypeMatch(one[i], i < two.length ? two[i] : ABSENT);
             if (!result.isDeepCopy)
             {
                 return result;
@@ -335,7 +337,7 @@ final class DeepCopyAssertion
             fieldPath.push("[" + i + "]");
 
             final DeepCopyMatchResult result =
-                matches(i < one.length ? one[i] : null, two[i]);
+                performValueTypeMatch(i < one.length ? one[i] : ABSENT, two[i]);
             if (!result.isDeepCopy)
             {
                 return result;
@@ -353,7 +355,7 @@ final class DeepCopyAssertion
             fieldPath.push("[" + i + "]");
 
             final DeepCopyMatchResult result =
-                matches(one[i], i < two.length ? two[i] : null);
+                performValueTypeMatch(one[i], i < two.length ? two[i] : ABSENT);
             if (!result.isDeepCopy)
             {
                 return result;
@@ -366,7 +368,7 @@ final class DeepCopyAssertion
             fieldPath.push("[" + i + "]");
 
             final DeepCopyMatchResult result =
-                matches(i < one.length ? one[i] : null, two[i]);
+                performValueTypeMatch(i < one.length ? one[i] : ABSENT, two[i]);
             if (!result.isDeepCopy)
             {
                 return result;
@@ -392,7 +394,7 @@ final class DeepCopyAssertion
 
             if (!secondaryIterator.hasNext())
             {
-                return valueNotEqual(fromListOne, "<absent>");
+                return valueNotEqual(fromListOne, ABSENT);
             }
 
             final DeepCopyMatchResult match = matches(fromListOne, secondaryIterator.next());
@@ -416,7 +418,7 @@ final class DeepCopyAssertion
 
             if (!secondaryIterator.hasNext())
             {
-                return valueNotEqual("<absent>", fromListTwo);
+                return valueNotEqual(ABSENT, fromListTwo);
             }
 
             final DeepCopyMatchResult match = matches(secondaryIterator.next(), fromListTwo);
