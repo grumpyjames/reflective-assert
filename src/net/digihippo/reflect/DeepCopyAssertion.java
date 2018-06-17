@@ -6,11 +6,23 @@ import java.util.*;
 
 final class DeepCopyAssertion
 {
+    private final Set<Class<?>> valueTypes = new HashSet<>();
+    {
+        valueTypes.add(String.class);
+        valueTypes.add(Long.class);
+        valueTypes.add(Integer.class);
+        valueTypes.add(Float.class);
+        valueTypes.add(Double.class);
+        valueTypes.add(Boolean.class);
+        valueTypes.add(Byte.class);
+    }
+
     private final Stack<String> fieldPath = new Stack<>();
 
-    DeepCopyAssertion()
+    DeepCopyAssertion(Class<?>... additionalImmutableTypes)
     {
         fieldPath.push("root");
+        Collections.addAll(valueTypes, additionalImmutableTypes);
     }
 
     public DeepCopyMatchResult matches(Object one, Object two)
@@ -454,17 +466,6 @@ final class DeepCopyAssertion
         {
             return DeepCopyMatchResult.success();
         }
-    }
-
-    private final Set<Class<?>> valueTypes = new HashSet<>();
-    {
-        valueTypes.add(String.class);
-        valueTypes.add(Long.class);
-        valueTypes.add(Integer.class);
-        valueTypes.add(Float.class);
-        valueTypes.add(Double.class);
-        valueTypes.add(Boolean.class);
-        valueTypes.add(Byte.class);
     }
 
     private boolean isValueType(Object one)

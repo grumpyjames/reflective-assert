@@ -2,6 +2,7 @@ package net.digihippo.reflect;
 
 import org.junit.Test;
 
+import java.time.LocalDate;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -523,6 +524,26 @@ public class ReflectiveDeepCopyTest
             "root->at(1): The same instance cannot be a deep copy of itself");
     }
 
+    private static class ExampleFive
+    {
+        private final LocalDate localDate;
+
+        private ExampleFive(LocalDate localDate)
+        {
+            this.localDate = localDate;
+        }
+    }
+
+    @Test
+    public void sometimes_it_will_be_necessary_for_outside_users_to_inform_us_a_type_is_immutable()
+    {
+        LocalDate date = LocalDate.of(2018, 1, 9);
+        ExampleFive one = new ExampleFive(date);
+        ExampleFive two = new ExampleFive(date);
+
+        assertDeepCopySuccess(one, two, LocalDate.class);
+    }
+
     private void assertDeepCopyFailure(
         Object one,
         Object two,
@@ -533,9 +554,12 @@ public class ReflectiveDeepCopyTest
         assertEquals(message, result.failureDescription);
     }
 
-    private void assertDeepCopySuccess(Object one, Object two)
+    private void assertDeepCopySuccess(
+        Object one,
+        Object two,
+        Class<?> ... additionalImmutableTypes)
     {
-        DeepCopyMatchResult matches = new DeepCopyAssertion().matches(one, two);
+        DeepCopyMatchResult matches = new DeepCopyAssertion(additionalImmutableTypes).matches(one, two);
         assertTrue(matches.failureDescription, matches.isDeepCopy);
     }
 
