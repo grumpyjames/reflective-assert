@@ -36,7 +36,7 @@ final class DeepCopyAssertion
 
             if (one == null || two == null)
             {
-                return unequalField(one, two);
+                return valueNotEqual(one, two);
             }
 
             if (!one.getClass().equals(two.getClass()))
@@ -59,7 +59,7 @@ final class DeepCopyAssertion
                 }
                 else
                 {
-                    return unequalField(one, two);
+                    return valueNotEqual(one, two);
                 }
             }
 
@@ -162,7 +162,7 @@ final class DeepCopyAssertion
 
             if (i >= two.length)
             {
-                return unequalField(one[i], "<absent>");
+                return valueNotEqual(one[i], "<absent>");
             }
             final DeepCopyMatchResult result = matches(one[i], two[i]);
             if (!result.isDeepCopy)
@@ -178,7 +178,7 @@ final class DeepCopyAssertion
 
             if (i >= one.length)
             {
-                return unequalField("<absent>", two[i]);
+                return valueNotEqual("<absent>", two[i]);
             }
             final DeepCopyMatchResult result = matches(one[i], two[i]);
             if (!result.isDeepCopy)
@@ -392,7 +392,7 @@ final class DeepCopyAssertion
 
             if (!secondaryIterator.hasNext())
             {
-                return unequalField(fromListOne, "<absent>");
+                return valueNotEqual(fromListOne, "<absent>");
             }
 
             final DeepCopyMatchResult match = matches(fromListOne, secondaryIterator.next());
@@ -416,7 +416,7 @@ final class DeepCopyAssertion
 
             if (!secondaryIterator.hasNext())
             {
-                return unequalField("<absent>", fromListTwo);
+                return valueNotEqual("<absent>", fromListTwo);
             }
 
             final DeepCopyMatchResult match = matches(secondaryIterator.next(), fromListTwo);
@@ -472,7 +472,7 @@ final class DeepCopyAssertion
     {
         if (!one.equals(two))
         {
-            return unequalField(one, two);
+            return valueNotEqual(one, two);
         }
         else
         {
@@ -485,7 +485,7 @@ final class DeepCopyAssertion
         return valueTypes.contains(one.getClass());
     }
 
-    private DeepCopyMatchResult unequalField(Object first, Object second)
+    private DeepCopyMatchResult valueNotEqual(Object first, Object second)
     {
         return fail(first + " != " + second);
     }
