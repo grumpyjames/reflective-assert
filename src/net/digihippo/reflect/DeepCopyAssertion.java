@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
-final class DeepCopyAssertion
+public final class DeepCopyAssertion
 {
     private static final String ABSENT = "<absent>";
 
@@ -21,7 +21,7 @@ final class DeepCopyAssertion
 
     private final Stack<String> fieldPath = new Stack<>();
 
-    DeepCopyAssertion(Class<?>... additionalImmutableTypes)
+    public DeepCopyAssertion(Class<?>... additionalImmutableTypes)
     {
         fieldPath.push("root");
         Collections.addAll(valueTypes, additionalImmutableTypes);

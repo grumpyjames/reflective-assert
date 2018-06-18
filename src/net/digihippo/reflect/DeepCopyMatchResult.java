@@ -1,9 +1,9 @@
 package net.digihippo.reflect;
 
-final class DeepCopyMatchResult
+public final class DeepCopyMatchResult
 {
-    final boolean isDeepCopy;
-    final String failureDescription;
+    public final boolean isDeepCopy;
+    public final String failureDescription;
 
     public DeepCopyMatchResult(boolean isDeepCopy, String failureDescription)
     {
